@@ -1,9 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:native_device_orientation/native_device_orientation.dart';
 
 class Connect4 extends StatefulWidget {
   final Function changeAppBar;
+
   const Connect4({super.key, required this.changeAppBar});
 
   @override
@@ -41,9 +43,26 @@ class _Connect4State extends State<Connect4> {
     if (connectFourGrid[row][col] != 0) {
       return;
     }
-    if (row == 0 && arrowDir == 'd') {
+    String direction = arrowDir;
+    if (direction.isEmpty) {
+      direction = await checkOrientation();
+    }
+    if (row == 0 && (direction == 'd' || direction.isEmpty)) {
       // drop token down
       for (var i = 0; i < gridRows; i++) {
+        if (connectFourGrid[i][col] == 0) {
+          connectFourGrid[i][col] = playerOneTurn ? 1 : 2;
+          setState(() {});
+          await Future.delayed(const Duration(milliseconds: 10));
+          connectFourGrid[i][col] = 0;
+          row = i;
+        } else {
+          break;
+        }
+      }
+    } else if (row == gridRows - 1 && (direction == 'u' || direction.isEmpty)) {
+      // drop token up lol
+      for (var i = gridRows - 1; i >= 0; i--) {
         if (connectFourGrid[i][col] == 0) {
           connectFourGrid[i][col] = playerOneTurn ? 1 : 2;
           setState(() {});
@@ -54,7 +73,7 @@ class _Connect4State extends State<Connect4> {
           break;
         }
       }
-    } else if (col == 0 && arrowDir == 'r') {
+    } else if (col == 0 && (direction == 'r' || direction.isEmpty)) {
       //drop token to right lol
       for (var i = 0; i < gridColumns; i++) {
         if (connectFourGrid[row][i] == 0) {
@@ -67,7 +86,7 @@ class _Connect4State extends State<Connect4> {
           break;
         }
       }
-    } else if (col == gridColumns - 1 && arrowDir == 'l') {
+    } else if (col == gridColumns - 1 && (direction == 'l' || direction.isEmpty)) {
       print('yaa');
       //drop token to left lol
       for (var i = gridColumns - 1; i >= 0; i--) {
@@ -77,19 +96,6 @@ class _Connect4State extends State<Connect4> {
           await Future.delayed(Duration(milliseconds: 10));
           connectFourGrid[row][i] = 0;
           col = i;
-        } else {
-          break;
-        }
-      }
-    } else if (row == gridRows - 1 && arrowDir == 'u') {
-      // drop token up lol
-      for (var i = gridRows - 1; i >= 0; i--) {
-        if (connectFourGrid[i][col] == 0) {
-          connectFourGrid[i][col] = playerOneTurn ? 1 : 2;
-          setState(() {});
-          await Future.delayed(Duration(milliseconds: 10));
-          connectFourGrid[i][col] = 0;
-          row = i;
         } else {
           break;
         }
@@ -133,7 +139,8 @@ class _Connect4State extends State<Connect4> {
       playerOneTurn = !playerOneTurn;
     }
 
-    widget.changeAppBar(color: playerOneTurn ? Colors.red : Colors.yellow, title: playerOneTurn ? 'Red\'s Turn' : 'Yellow\'s Turn');
+    widget.changeAppBar(
+        color: playerOneTurn ? Colors.red : Colors.yellow, title: playerOneTurn ? 'Red\'s Turn' : 'Yellow\'s Turn');
     // setState(() {});
   }
 
@@ -290,13 +297,33 @@ class _Connect4State extends State<Connect4> {
     setState(() {});
   }
 
+  Future<String> checkOrientation() async {
+    print('checkOrientation');
+    try {
+      final orientation = await NativeDeviceOrientationCommunicator().orientation(useSensor: true);
+      print(orientation);
+      if (orientation == NativeDeviceOrientation.portraitDown) {
+        return 'u';
+      } else if (orientation == NativeDeviceOrientation.portraitUp) {
+        return 'd';
+      } else if (orientation == NativeDeviceOrientation.landscapeLeft) {
+        return 'l';
+      } else if (orientation == NativeDeviceOrientation.landscapeRight) {
+        return 'r';
+      }
+    } catch (err) {
+      print(err);
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height-AppBar().preferredSize.height;
+    double screenWidth = MediaQuery.of(context).size.width - 88;
+    double screenHeight = MediaQuery.of(context).size.height - AppBar().preferredSize.height;
     // TODO: Factor in padding of each thingy
-    double cellWidth = (screenWidth * 0.8 / gridColumns).floor() as double;
-    double cellHeight = (screenHeight * 0.8 / gridRows).floor() as double;
+    double cellWidth = ((screenWidth * 0.75 / gridColumns).floor()).toDouble();
+    double cellHeight = (screenHeight * 0.75 / gridRows).floor().toDouble();
     double cellSize = cellHeight < cellWidth ? cellHeight : cellWidth;
 
     return Scaffold(
@@ -332,7 +359,7 @@ class _Connect4State extends State<Connect4> {
                                     // print('mousePosition: ' + mousePosition.toString());
 
                                     arrowDir = calculateDistance(0, cellSize, mouseX, mouseY) <
-                                        calculateDistance(cellSize, 0, mouseX, mouseY)
+                                            calculateDistance(cellSize, 0, mouseX, mouseY)
                                         ? 'r'
                                         : 'd';
                                   } else if (colIndex == gridColumns - 1) {
@@ -342,7 +369,7 @@ class _Connect4State extends State<Connect4> {
                                     // print('mousePosition: ' + mousePosition.toString());
 
                                     arrowDir = calculateDistance(0, 0, mouseX, mouseY) <
-                                        calculateDistance(cellSize, cellSize, mouseX, mouseY)
+                                            calculateDistance(cellSize, cellSize, mouseX, mouseY)
                                         ? 'd'
                                         : 'l';
                                     // print('arrowDir: ' + arrowDir);
@@ -355,9 +382,9 @@ class _Connect4State extends State<Connect4> {
                                   if (colIndex == 0) {
                                     final mouseX = event.localPosition.dx;
                                     final mouseY = event.localPosition.dy;
-                                    print('mousePosition:');
+                                    // print('mousePosition:');
                                     arrowDir = calculateDistance(0, 0, mouseX, mouseY) <
-                                        calculateDistance(cellSize, cellSize, mouseX, mouseY)
+                                            calculateDistance(cellSize, cellSize, mouseX, mouseY)
                                         ? 'r'
                                         : 'u';
                                   } else if (colIndex == gridColumns - 1) {
@@ -366,7 +393,7 @@ class _Connect4State extends State<Connect4> {
                                     final mouseY = event.localPosition.dy;
 
                                     arrowDir = calculateDistance(0, cellSize, mouseX, mouseY) <
-                                        calculateDistance(cellSize, 0, mouseX, mouseY)
+                                            calculateDistance(cellSize, 0, mouseX, mouseY)
                                         ? 'u'
                                         : 'l';
                                     // print('arrowDir: ' + arrowDir);
@@ -410,7 +437,7 @@ class _Connect4State extends State<Connect4> {
         ),
         Column(
           children: [
-            Text('Grav'),
+            Text('Grav', style: TextStyle(color: Colors.black)),
             IconButton(
                 onPressed: () {
                   gravity('u');
@@ -450,7 +477,7 @@ class CellWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     IconData arrowIcon = Icons.keyboard_arrow_down;
-    print(showArrow);
+    // print(showArrow);
     if (showArrow == 'r') {
       arrowIcon = Icons.keyboard_arrow_right;
     } else if (showArrow == 'l') {

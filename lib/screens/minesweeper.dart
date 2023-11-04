@@ -14,8 +14,8 @@ class Minesweeper extends StatefulWidget {
 }
 
 class _MinesweeperState extends State<Minesweeper> {
-  int tilesAcross = 13;
-  int tilesDown = 9;
+  int tilesAcross = 13;//13;
+  int tilesDown = 9;//9;
   String difficulty = 'easy';
 
   double minTileSize = 38;
@@ -174,6 +174,24 @@ class _MinesweeperState extends State<Minesweeper> {
     }
   }
 
+  checkGameWon() {
+    bool won = true;
+    for (List<Tile> row in grid) {
+      for (Tile tile in row) {
+        if (!tile.isRevealed && !tile.isBomb) {
+          print('nah');
+          print(row.indexOf(tile));
+          print(grid.indexOf(row));
+          won = false;
+          break;
+        }
+      }
+    }
+    if (won) {
+      complete();
+    }
+  }
+
   tileTapped(Tile tile, int i, int j) async {
     if (!gameFinished && !tile.isFlagged) {
       tile.isClicked = true;
@@ -190,6 +208,8 @@ class _MinesweeperState extends State<Minesweeper> {
       setState(() {
         tile.isRevealed = true;
       });
+
+      checkGameWon();
     }
   }
 
@@ -224,17 +244,13 @@ class _MinesweeperState extends State<Minesweeper> {
         context: context,
         builder: (ctx) {
           return AlertDialog(
+            content: Text('You ${won ? 'won!' : 'lost!'}'),
             actions: [
               ElevatedButton(
-                child: Container(
-                  child: Text('OK'),
-                ),
+                child: const Text('OK'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
-            content: Container(
-              child: Text('You ' + (won ? 'won!' : 'lost!')),
-            ),
           );
         });
   }

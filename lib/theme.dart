@@ -25,7 +25,6 @@ final ThemeData myTheme = ThemeData(
   selectedRowColor: const Color( 0xfff5f5f5 ),
   unselectedWidgetColor: const Color( 0x8a000000 ),
   disabledColor: const Color( 0x61000000 ),
-  buttonColor: const Color( 0xffe0e0e0 ),
   toggleableActiveColor: const Color( 0xff220ebe ),
   secondaryHeaderColor: const Color( 0xffeae7fd ),
   backgroundColor: const Color( 0xffaaa0f8 ),

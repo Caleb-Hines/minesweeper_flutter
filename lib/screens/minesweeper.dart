@@ -1,11 +1,10 @@
-
 import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import '../classes/tile.dart';
 
-import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as html;
+
+import '../classes/tile.dart';
 
 class Minesweeper extends StatefulWidget {
   const Minesweeper({Key? key}) : super(key: key);
@@ -25,7 +24,6 @@ class _MinesweeperState extends State<Minesweeper> {
   late int numBombs;
   List<List<Tile>> grid = [];
   bool gameFinished = false;
-
 
   Border tileBorder = const Border(
     left: BorderSide(
@@ -262,7 +260,8 @@ class _MinesweeperState extends State<Minesweeper> {
     double width = MediaQuery.of(context).size.width;
     double pageHeight = MediaQuery.of(context).size.height;
     print('screenHeight ' + pageHeight.toString());
-    pageHeight -= MediaQuery.of(context).padding.top + MediaQuery.of(context).padding.bottom + kToolbarHeight + bottomPadding;
+    pageHeight -=
+        MediaQuery.of(context).padding.top + MediaQuery.of(context).padding.bottom + kToolbarHeight + bottomPadding;
     print('pageHeight ' + pageHeight.toString());
 
     bool xOverflow = false;
@@ -291,14 +290,11 @@ class _MinesweeperState extends State<Minesweeper> {
     print("_tileSize: " + _tileSize.toString());
 
     return Center(
-        child: Padding(
-          padding: EdgeInsets.only(bottom: bottomPadding),
-          child:
-          Container(
-            color: Color(0xffd5cffc),
-            child:
-
-    InteractiveViewer(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        child: Container(
+          color: Color(0xffd5cffc),
+          child: InteractiveViewer(
             panEnabled: panEnabled,
             scaleEnabled: panEnabled,
             constrained: false,
@@ -307,86 +303,83 @@ class _MinesweeperState extends State<Minesweeper> {
             maxScale: 2,
             child:
 
-    // SingleChildScrollView(
-    //   physics: NeverScrollableScrollPhysics(),
-    // scrollDirection: Axis.horizontal,
-    // //
-    // child:
+                // SingleChildScrollView(
+                //   physics: NeverScrollableScrollPhysics(),
+                // scrollDirection: Axis.horizontal,
+                // //
+                // child:
 
-            Container(
+                Container(
               height: _tileSize * grid.length,
               width: _tileSize * grid[0].length,
-              child:
-    ListView.builder(
-                physics: NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: tilesAcross,
-                itemBuilder: (ctx, i) {
-                  List<Tile> row = grid[i];
-                  List<Widget> rowItems = [];
+              child: ListView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: tilesAcross,
+                  itemBuilder: (ctx, i) {
+                    List<Tile> row = grid[i];
+                    List<Widget> rowItems = [];
 
+                    for (int j = 0; j < row.length; j++) {
+                      Tile tile = row[j];
 
-                  for (int j = 0; j < row.length; j++) {
-                    Tile tile = row[j];
+                      String display = '';
+                      Color bgColor = Theme.of(context).primaryColor;
 
-                    String display = '';
-                    Color bgColor = Theme.of(context).primaryColor;
+                      bool useRevealedBorber = true;
 
-                    bool useRevealedBorber = true;
-
-                    if (!tile.isRevealed) {
-                      useRevealedBorber = false;
-                      if (tile.isFlagged) {
-                        display = 'f';
+                      if (!tile.isRevealed) {
+                        useRevealedBorber = false;
+                        if (tile.isFlagged) {
+                          display = 'f';
+                        } else {
+                          display = '';
+                        }
+                      } else if (tile.isBomb) {
+                        display = 'B';
                       } else {
-                        display = '';
+                        if (tile.adjacentBombs > 0) {
+                          display = tile.adjacentBombs.toString();
+                        } else {
+                          bgColor = Color(0xffaaa0f8);
+                          // bgColor = Colors.grey[300]!;
+                        }
                       }
-                    } else if (tile.isBomb) {
-                      display = 'B';
-                    } else {
-                      if (tile.adjacentBombs > 0) {
-                        display = tile.adjacentBombs.toString();
-                      } else {
-                        bgColor = Color(0xffaaa0f8);
-                        // bgColor = Colors.grey[300]!;
-                      }
+
+                      rowItems.add(GestureDetector(
+                          onSecondaryTap: () {
+                            toggleFlagged(tile);
+                          },
+                          onTap: () {
+                            tileTapped(tile, i, j);
+                          },
+                          onLongPress: () {
+                            toggleFlagged(tile);
+                          },
+                          child: Container(
+                              decoration: BoxDecoration(
+                                border: useRevealedBorber ? revealedBorder : tileBorder,
+                                color: bgColor,
+                              ),
+                              width: _tileSize,
+                              child: Center(
+                                  child: Text(
+                                display,
+                                style: Theme.of(context).textTheme.bodyText2,
+                              )))));
                     }
 
-                    rowItems.add(GestureDetector(
-                        onSecondaryTap: () {
-                          toggleFlagged(tile);
-                        },
-                        onTap: () {
-                          tileTapped(tile, i, j);
-                        },
-                        onLongPress: () {
-                          toggleFlagged(tile);
-                        },
-                        child: Container(
-                            decoration: BoxDecoration(
-                              border: useRevealedBorber ? revealedBorder : tileBorder,
-                              color: bgColor,
-                            ),
-                            width: _tileSize,
-                            child: Center(
-                                child: Text(
-                              display,
-                              style: Theme.of(context).textTheme.bodyText2,
-                            )))));
-                  }
-
-                  return SizedBox(
-                    height: _tileSize,
-                    child:
-
-                      Row(
+                    return SizedBox(
+                      height: _tileSize,
+                      child: Row(
                         children: rowItems,
                       ),
-                  );
-                }),
-    ),
-          ),),
+                    );
+                  }),
+            ),
+          ),
         ),
-      );
+      ),
+    );
   }
 }
